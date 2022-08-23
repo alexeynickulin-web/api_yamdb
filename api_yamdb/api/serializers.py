@@ -1,7 +1,7 @@
 from rest_framework import serializers
 from rest_framework.exceptions import ValidationError
 
-from reviews.models import User
+from reviews.models import User, Comment, Review
 
 
 class RegistrationSerializer(serializers.ModelSerializer):
@@ -70,3 +70,15 @@ class UserSerializer(serializers.ModelSerializer):
         if (self.instance.username != username and
                 User.objects.filter(username=username).count() > 0):
             raise ValidationError('A user with this username already exists.')
+
+
+class ReviewSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Review
+        fields = ('id', 'text', 'author', 'score', 'pub_date', 'title')
+
+
+class CommentSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Comment
+        fields = ('id', 'text', 'author', 'pub_date',)

@@ -8,11 +8,12 @@ from rest_framework.permissions import AllowAny, IsAuthenticated
 from rest_framework.response import Response
 from rest_framework_simplejwt.tokens import RefreshToken
 
-from reviews.models import User
+from reviews.models import User, Comment, Review
 
 from .permissions import IsAdminOrSuperuser, IsAuthorOrModeratorOrAdmin
 from .serializers import (AdminRegistrationSerializer, RegistrationSerializer,
-                          TokenObtainSerializer, UserSerializer)
+                          TokenObtainSerializer, UserSerializer,
+                          CommentSerializer, ReviewSerializer)
 
 
 class RegistrationViewSet(viewsets.GenericViewSet, mixins.CreateModelMixin):
@@ -80,3 +81,10 @@ class DeleteUserViewSet(mixins.DestroyModelMixin,
     queryset = User.objects.all()
     permission_classes = [IsAuthenticated, IsAdminOrSuperuser]
     lookup_field = 'username'
+
+class ReviewViewSet(viewsets.ModelViewSet):
+    serializer_class = ReviewSerializer
+
+
+class CommentViewSet(viewsets.ModelViewSet):
+    serializer_class = CommentSerializer
