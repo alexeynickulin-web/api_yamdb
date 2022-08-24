@@ -1,7 +1,7 @@
 from django.contrib import admin
 from django.contrib.auth.admin import UserAdmin
 
-from .models import User, Comment, Review 
+from .models import Category, Comment, Genre, Review, Title, User
 
 
 class ReviewAdmin(admin.ModelAdmin):
@@ -34,3 +34,21 @@ admin.site.register(Comment, CommentAdmin)
 admin.site.register(User, UserAdmin)
 UserAdmin.list_display = ('email', 'username', 'first_name',
                           'last_name', 'role', 'bio', 'is_superuser')
+
+
+@admin.register(Category)
+class CategoryAdmin(admin.ModelAdmin):
+    list_display = ('pk', 'name', 'slug')
+    empty_value_display = '-пусто-'
+
+
+@admin.register(Genre)
+class GenreAdmin(admin.ModelAdmin):
+    list_display = ('pk', 'name', 'slug')
+    empty_value_display = '-пусто-'
+
+
+@admin.register(Title)
+class TitleAdmin(admin.ModelAdmin):
+    list_display = ('pk', 'name', 'year', 'description', 'category')
+    empty_value_display = '-пусто-'
