@@ -1,8 +1,8 @@
 from django.contrib.auth.models import AbstractUser
 from django.contrib.auth.validators import UnicodeUsernameValidator
-from django.db import models
-from django.contrib.auth.models import AbstractUser
 from django.core.validators import MaxValueValidator, MinValueValidator
+from django.db import models
+
 from .utils import username_not_me
 
 
@@ -110,4 +110,3 @@ class Comment(models.Model):
 
     def __str__(self):
         return self.text[:15]
-
