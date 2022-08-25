@@ -1,3 +1,5 @@
+from django.core.validators import MaxValueValidator, MinValueValidator
+from django.db.models import Avg
 from rest_framework import serializers
 from rest_framework.exceptions import ValidationError
 from rest_framework.generics import get_object_or_404
@@ -123,7 +125,9 @@ class CategorySerializer(serializers.ModelSerializer):
 class TitleSerializer(serializers.ModelSerializer):
     category = CategorySerializer(read_only=True)
     genre = GenreSerializer(read_only=True, many=True)
-    rating = serializers.SerializerMethodField()
+    rating = serializers.SerializerMethodField(
+        validators=[MinValueValidator(1), MaxValueValidator(10)]
+    )
 
     class Meta:
         fields = (
@@ -138,7 +142,10 @@ class TitleSerializer(serializers.ModelSerializer):
         model = Title
 
     def get_rating(self, obj):
-        return None
+        average = obj.reviews.aggregate(Avg('score'))
+        if not average['score__avg']:
+            return None
+        return int(average['score__avg'])
 
 
 class TitleCreateSerializer(serializers.ModelSerializer):
