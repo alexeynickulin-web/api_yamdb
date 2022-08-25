@@ -2,6 +2,7 @@ from django.contrib.auth.models import AbstractUser
 from django.contrib.auth.validators import UnicodeUsernameValidator
 from django.core.validators import MaxValueValidator, MinValueValidator
 from django.db import models
+from .validators import validate_year
 
 from .utils import username_not_me
 
@@ -55,7 +56,7 @@ class Genre(models.Model):
 
 class Title(models.Model):
     name = models.TextField()
-    year = models.IntegerField()
+    year = models.IntegerField(validators=[validate_year])
     description = models.TextField(blank=True)
 
     genre = models.ManyToManyField(
