@@ -13,7 +13,7 @@ from rest_framework.response import Response
 from rest_framework_simplejwt.tokens import RefreshToken
 from reviews.models import Category, Genre, Review, Title, User, Comment
 
-from .permissions import (IsAuthorOrModeratorOrAdmin, IsAdminOrSuperuser, IsAuthorOrAdminOrModerator)
+from .permissions import (IsAdminOrSuperuser, IsAuthorOrAdminOrModerator)
 from .serializers import (AdminRegistrationSerializer, CategorySerializer,
                           CommentSerializer, GenreSerializer,
                           RegistrationSerializer, ReviewSerializer,

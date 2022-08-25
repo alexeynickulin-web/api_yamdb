@@ -1,10 +1,8 @@
 from rest_framework import serializers
 from rest_framework.exceptions import ValidationError
-from rest_framework.validators import UniqueTogetherValidator
 from rest_framework.generics import get_object_or_404
 
 from reviews.models import Category, Comment, Genre, Review, Title, User
-from .utils import CurrenTitleDefault
 
 
 class RegistrationSerializer(serializers.ModelSerializer):
@@ -65,13 +63,13 @@ class UserSerializer(serializers.ModelSerializer):
         raise ValidationError('Role must be user, admin or moderator.')
 
     def validate_email(self, email):
-        if (self.instance.email != email and
-                User.objects.filter(email=email).count() > 0):
+        if (self.instance.email != email
+                and User.objects.filter(email=email).count() > 0):
             raise ValidationError('A user with this email already exists.')
 
     def validate_username(self, username):
-        if (self.instance.username != username and
-                User.objects.filter(username=username).count() > 0):
+        if (self.instance.username != username
+                and User.objects.filter(username=username).count() > 0):
             raise ValidationError('A user with this username already exists.')
 
 

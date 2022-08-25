@@ -5,5 +5,5 @@ from datetime import date
 def validate_year(value):
     if value > date.today().year:
         raise ValidationError(
-            f'Год произведения не может быть больше текущего.'
+            'Год произведения не может быть больше текущего.'
         )
