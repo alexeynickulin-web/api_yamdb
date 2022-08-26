@@ -1,6 +1,6 @@
 import secrets
-from django.core.exceptions import ValidationError
 
+from django.core.exceptions import ValidationError
 from django.core.mail import send_mail
 from django.shortcuts import get_object_or_404
 from django_filters.rest_framework import (CharFilter, DjangoFilterBackend,
@@ -8,12 +8,13 @@ from django_filters.rest_framework import (CharFilter, DjangoFilterBackend,
 from rest_framework import mixins, status, viewsets
 from rest_framework.filters import SearchFilter
 from rest_framework.pagination import LimitOffsetPagination
-from rest_framework.permissions import (AllowAny, IsAuthenticated)
+from rest_framework.permissions import AllowAny, IsAuthenticated
 from rest_framework.response import Response
 from rest_framework_simplejwt.tokens import RefreshToken
-from reviews.models import Category, Genre, Review, Title, User, Comment
 
-from .permissions import (IsAdminOrSuperuser, IsAuthorOrAdminOrModerator)
+from reviews.models import Category, Comment, Genre, Review, Title, User
+
+from .permissions import IsAdminOrSuperuser, IsAuthorOrAdminOrModerator
 from .serializers import (AdminRegistrationSerializer, CategorySerializer,
                           CommentSerializer, GenreSerializer,
                           RegistrationSerializer, ReviewSerializer,
@@ -98,10 +99,7 @@ class ReviewViewSet(viewsets.ModelViewSet):
         return title.reviews.all()
 
     def perform_create(self, serializer):
-        title_id = self.kwargs.get('title_id')
-        title = get_object_or_404(Title, id=title_id)
-        if self.request.user.reviews.filter(title=title_id).exists():
-            raise ValidationError('К этому произведению уже оставлен отзыв.')
+        title = get_object_or_404(Title, id=self.kwargs.get('title_id'))
         serializer.save(author=self.request.user, title=title)
 
 
@@ -111,18 +109,14 @@ class CommentViewSet(viewsets.ModelViewSet):
     permission_classes = (IsAuthorOrAdminOrModerator,)
 
     def get_queryset(self):
-        queryset = Comment.objects.filter(
-            review_id=self.kwargs.get('review_id')
-        )
-        return queryset
+        review = get_object_or_404(Review, id=self.kwargs.get('review_id'))
+        return review.comments_review.all()
 
     def perform_create(self, serializer):
-        serializer.is_valid(raise_exception=True)
-        if get_object_or_404(Review, id=self.kwargs.get('review_id')):
-            serializer.save(
-                author=self.request.user,
-                review_id=self.kwargs.get('review_id')
-            )
+        title_id = self.kwargs.get('title_id')
+        review_id = self.kwargs.get('review_id')
+        review = get_object_or_404(Review, id=review_id, title=title_id)
+        serializer.save(author=self.request.user, review=review)
 
 
 class CategoryViewSet(viewsets.ModelViewSet):

@@ -126,12 +126,12 @@ class Comment(models.Model):
     )
     author = models.ForeignKey(
         User, on_delete=models.CASCADE,
-        related_name='comments',
+        related_name='comments_author',
         verbose_name='Автор'
     )
     review = models.ForeignKey(
         Review, on_delete=models.CASCADE,
-        related_name='comments',
+        related_name='comments_review',
         verbose_name='Отзыв'
     )
     pub_date = models.DateTimeField(
