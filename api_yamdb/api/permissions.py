@@ -18,12 +18,9 @@ class IsAuthor(permissions.BasePermission):
 
 class IsAuthorOrModeratorOrAdmin(permissions.BasePermission):
     def has_object_permission(self, request, view, obj):
-        return (IsAuthor().has_object_permission(
-            request, view, obj)
-                or IsModerator().has_object_permission(
-                    request, view, obj)
-                or IsAdminOrSuperuser().has_object_permission(
-                    request, view, obj))
+        return (IsAuthor().has_object_permission(request, view, obj)
+                or IsModerator().has_permission(request, view)
+                or IsAdminOrSuperuser().has_permission(request, view))
 
 
 class IsAuthorOrAdminOrModerator(permissions.BasePermission):
