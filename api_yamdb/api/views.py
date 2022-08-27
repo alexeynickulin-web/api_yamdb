@@ -1,7 +1,6 @@
 import secrets
 
 from django.conf import settings
-from django.core.exceptions import ValidationError
 from django.core.mail import send_mail
 from django.shortcuts import get_object_or_404
 from django_filters.rest_framework import (CharFilter, DjangoFilterBackend,
@@ -24,28 +23,20 @@ from .serializers import (AdminRegistrationSerializer, CategorySerializer,
                           TokenObtainSerializer, UserSerializer)
 
 
-class RegistrationViewSet(viewsets.GenericViewSet, mixins.CreateModelMixin):
+class RegistrationViewSet(viewsets.GenericViewSet):
     queryset = User.objects.all()
     serializer_class = RegistrationSerializer
     permission_classes = [AllowAny]
 
-    def create(self, request, *args, **kwargs):
+    def create(self, request):
         serializer = self.get_serializer(data=request.data)
         serializer.is_valid(raise_exception=True)
-        self.perform_create(serializer)
-        headers = self.get_success_headers(serializer.data)
-        return Response(serializer.data, status=status.HTTP_200_OK,
-                        headers=headers)
-
-    def perform_create(self, serializer):
         code = secrets.token_urlsafe(nbytes=10)
         send_mail(subject='Confirmation Code for Yamdb',
                   message=code, from_email=settings.ADMIN_EMAIL,
                   recipient_list=[self.request.data['email']])
         serializer.save(confirmation_code=code)
-        headers = self.get_success_headers(serializer.data)
-        return Response(serializer.data, status=status.HTTP_200_OK,
-                        headers=headers)
+        return Response(serializer.data, status=status.HTTP_200_OK)
 
 
 class TokenObtainViewset(viewsets.GenericViewSet):
