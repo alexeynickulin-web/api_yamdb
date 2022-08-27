@@ -11,9 +11,9 @@ class Command(BaseCommand):
     def handle(self, *args, **options):
         """Запись в базу данных."""
         with open('static/data/category.csv', 'r', encoding='utf-8') as file:
-            catigories = list(csv.DictReader(file, delimiter=','))
+            categories = list(csv.DictReader(file, delimiter=','))
 
-        for category in catigories:
+        for category in categories:
             print(category)
             category_to_save = Category(
                 id=category['id'],
