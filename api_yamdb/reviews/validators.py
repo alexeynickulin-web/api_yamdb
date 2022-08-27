@@ -8,6 +8,7 @@ def validate_year(value):
             'Год произведения не может быть больше текущего.'
         )
 
+
 def username_not_me(value):
     if value.lower() == 'me':
         raise ValidationError("You cannot use 'me' as a username")
