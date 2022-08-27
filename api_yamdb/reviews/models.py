@@ -2,13 +2,15 @@ from django.contrib.auth.models import AbstractUser
 from django.contrib.auth.validators import UnicodeUsernameValidator
 from django.core.validators import MaxValueValidator, MinValueValidator
 from django.db import models
-from .validators import validate_year
 
-from .utils import username_not_me
+from .utils import ADMIN, MODERATOR, USER
+from .validators import username_not_me, validate_year
 
 
 class User(AbstractUser):
-    CHOICES = [(1, 'user'), (2, 'admin'), (3, 'moderator')]
+    ROLES = [(USER, USER),
+             (ADMIN, ADMIN),
+             (MODERATOR, MODERATOR)]
     username = models.CharField(
         'username',
         max_length=150,
@@ -26,8 +28,20 @@ class User(AbstractUser):
             'unique': "A user with that username already exists.",
         },)
     confirmation_code = models.CharField(max_length=100)
-    role = models.CharField(max_length=20, choices=CHOICES, default='user')
+    role = models.CharField(max_length=20, choices=ROLES, default=USER)
     bio = models.CharField(max_length=200, default='')
+
+    @property
+    def is_admin(self):
+        return self.role == ADMIN
+
+    @property
+    def is_moderator(self):
+        return self.role == MODERATOR
+
+    @property
+    def is_user(self):
+        return self.role == USER
 
 
 class Category(models.Model):

@@ -27,7 +27,7 @@ class Migration(migrations.Migration):
                 ('is_staff', models.BooleanField(default=False, help_text='Designates whether the user can log into this admin site.', verbose_name='staff status')),
                 ('is_active', models.BooleanField(default=True, help_text='Designates whether this user should be treated as active. Unselect this instead of deleting accounts.', verbose_name='active')),
                 ('date_joined', models.DateTimeField(default=django.utils.timezone.now, verbose_name='date joined')),
-                ('username', models.CharField(error_messages={'unique': 'A user with that username already exists.'}, max_length=150, unique=True, validators=[django.contrib.auth.validators.UnicodeUsernameValidator(), reviews.utils.username_not_me], verbose_name='username')),
+                ('username', models.CharField(error_messages={'unique': 'A user with that username already exists.'}, max_length=150, unique=True, validators=[django.contrib.auth.validators.UnicodeUsernameValidator(), reviews.validators.username_not_me], verbose_name='username')),
                 ('first_name', models.CharField(blank=True, max_length=150)),
                 ('email', models.EmailField(error_messages={'unique': 'A user with that username already exists.'}, max_length=254, unique=True)),
                 ('confirmation_code', models.CharField(max_length=100)),

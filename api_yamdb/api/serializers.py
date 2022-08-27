@@ -5,12 +5,18 @@ from rest_framework.exceptions import ValidationError
 from rest_framework.generics import get_object_or_404
 
 from reviews.models import Category, Comment, Genre, Review, Title, User
+from reviews.utils import ROLES, USER
 
 
 class RegistrationSerializer(serializers.ModelSerializer):
     class Meta:
         model = User
         fields = ('email', 'username')
+
+    def validate_username(self, username):
+        if username.lower() == 'me':
+            raise ValidationError("You cannot use 'me' as a username")
+        return username
 
 
 class AdminRegistrationSerializer(serializers.ModelSerializer):
@@ -33,15 +39,15 @@ class TokenObtainSerializer(serializers.ModelSerializer):
         model = User
         fields = ['username', 'confirmation_code']
 
-    def validate_confirmation_code(self, data):
+    def validate_confirmation_code(self, code):
         if self.instance:
-            if str(data) == str(self.instance.confirmation_code):
-                return self.initial_data
+            if str(code) == str(self.instance.confirmation_code):
+                return code
             else:
                 raise ValidationError(
                     'Incorrect confirmation code. Try again.'
                 )
-        return self.initial_data
+        return code
 
 
 class UserSerializer(serializers.ModelSerializer):
@@ -58,11 +64,12 @@ class UserSerializer(serializers.ModelSerializer):
                   'last_name', 'role', 'bio')
 
     def validate_role(self, role):
-        if role in ['user', 'admin', 'moderator']:
-            if self.context['request'].user.role not in ['admin', 'moderator']:
-                return 'user'
+        if role.lower() not in ROLES:
+            raise ValidationError(f'Role must be one of: {ROLES}')
+        user = self.context['request'].user
+        if user.is_admin or user.is_moderator:
             return role
-        raise ValidationError('Role must be user, admin or moderator.')
+        return USER
 
     def validate_email(self, email):
         if (self.instance.email != email
