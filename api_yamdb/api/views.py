@@ -2,9 +2,9 @@ import secrets
 
 from django.conf import settings
 from django.core.mail import send_mail
+from django.db import models
 from django.shortcuts import get_object_or_404
-from django_filters.rest_framework import (CharFilter, DjangoFilterBackend,
-                                           FilterSet)
+from django_filters.rest_framework import DjangoFilterBackend
 from rest_framework import mixins, status, viewsets
 from rest_framework.decorators import action
 from rest_framework.filters import SearchFilter
@@ -12,9 +12,9 @@ from rest_framework.pagination import LimitOffsetPagination
 from rest_framework.permissions import AllowAny, IsAuthenticated
 from rest_framework.response import Response
 from rest_framework_simplejwt.tokens import RefreshToken
-
 from reviews.models import Category, Comment, Genre, Review, Title, User
 
+from .filters import TitleFilter
 from .permissions import IsAdminOrSuperuser, IsAuthorOrAdminOrModerator
 from .serializers import (AdminRegistrationSerializer, CategorySerializer,
                           CommentSerializer, GenreSerializer,
@@ -112,7 +112,15 @@ class CommentViewSet(viewsets.ModelViewSet):
         serializer.save(author=self.request.user, review=review)
 
 
-class CategoryViewSet(viewsets.ModelViewSet):
+class CreateListDestroyViewSet(mixins.CreateModelMixin,
+                               mixins.ListModelMixin,
+                               mixins.DestroyModelMixin,
+                               viewsets.GenericViewSet):
+    pass
+
+
+class CategoryViewSet(CreateListDestroyViewSet):
+    lookup_field = 'slug'
     queryset = Category.objects.all()
     serializer_class = CategorySerializer
     pagination_class = LimitOffsetPagination
@@ -126,14 +134,8 @@ class CategoryViewSet(viewsets.ModelViewSet):
         return super().get_permissions()
 
 
-class DeleteCategoryViewSet(mixins.DestroyModelMixin, viewsets.GenericViewSet):
-    permission_classes = [IsAdminOrSuperuser]
-    queryset = Category.objects.all()
+class GenreViewSet(CreateListDestroyViewSet):
     lookup_field = 'slug'
-    permission_classes = [IsAuthenticated, IsAdminOrSuperuser]
-
-
-class GenreViewSet(viewsets.ModelViewSet):
     queryset = Genre.objects.all()
     serializer_class = GenreSerializer
     pagination_class = LimitOffsetPagination
@@ -147,25 +149,10 @@ class GenreViewSet(viewsets.ModelViewSet):
         return super().get_permissions()
 
 
-class DeleteGenreViewSet(mixins.DestroyModelMixin, viewsets.GenericViewSet):
-    permission_classes = [IsAdminOrSuperuser]
-    queryset = Genre.objects.all()
-    lookup_field = 'slug'
-    permission_classes = [IsAuthenticated, IsAdminOrSuperuser]
-
-
-class TitleFilter(FilterSet):
-    category = CharFilter(field_name='category__slug', lookup_expr='contains')
-    genre = CharFilter(field_name='genre__slug', lookup_expr='contains')
-    name = CharFilter(field_name='name', lookup_expr='contains')
-
-    class Meta:
-        model = Title
-        fields = ['category', 'genre', 'name', 'year']
-
-
 class TitleViewSet(viewsets.ModelViewSet):
-    queryset = Title.objects.all()
+    queryset = Title.objects.all().annotate(
+        rating=models.Avg('reviews__score')
+    )
     pagination_class = LimitOffsetPagination
     filter_backends = (DjangoFilterBackend,)
     filterset_class = TitleFilter
