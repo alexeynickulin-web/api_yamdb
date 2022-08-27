@@ -1,19 +1,22 @@
 import secrets
-from django.core.exceptions import ValidationError
 
+from django.conf import settings
+from django.core.exceptions import ValidationError
 from django.core.mail import send_mail
 from django.shortcuts import get_object_or_404
 from django_filters.rest_framework import (CharFilter, DjangoFilterBackend,
                                            FilterSet)
 from rest_framework import mixins, status, viewsets
+from rest_framework.decorators import action
 from rest_framework.filters import SearchFilter
 from rest_framework.pagination import LimitOffsetPagination
-from rest_framework.permissions import (AllowAny, IsAuthenticated)
+from rest_framework.permissions import AllowAny, IsAuthenticated
 from rest_framework.response import Response
 from rest_framework_simplejwt.tokens import RefreshToken
-from reviews.models import Category, Genre, Review, Title, User, Comment
 
-from .permissions import (IsAdminOrSuperuser, IsAuthorOrAdminOrModerator)
+from reviews.models import Category, Comment, Genre, Review, Title, User
+
+from .permissions import IsAdminOrSuperuser, IsAuthorOrAdminOrModerator
 from .serializers import (AdminRegistrationSerializer, CategorySerializer,
                           CommentSerializer, GenreSerializer,
                           RegistrationSerializer, ReviewSerializer,
@@ -37,30 +40,32 @@ class RegistrationViewSet(viewsets.GenericViewSet, mixins.CreateModelMixin):
     def perform_create(self, serializer):
         code = secrets.token_urlsafe(nbytes=10)
         send_mail(subject='Confirmation Code for Yamdb',
-                  message=code, from_email='registration@yamdb.com',
+                  message=code, from_email=settings.ADMIN_EMAIL,
                   recipient_list=[self.request.data['email']])
         serializer.save(confirmation_code=code)
+        headers = self.get_success_headers(serializer.data)
+        return Response(serializer.data, status=status.HTTP_200_OK,
+                        headers=headers)
 
 
 class TokenObtainViewset(viewsets.GenericViewSet):
     permission_classes = [AllowAny]
 
     def update(self, request):
-        serializer = TokenObtainSerializer(data=request.data)
-        serializer.is_valid(raise_exception=True)
-        if 'username' in self.request.data:
+        if "username" in request.data:
             user = get_object_or_404(User, username=request.data["username"])
             serializer = TokenObtainSerializer(user, data=request.data)
             serializer.is_valid(raise_exception=True)
             token = RefreshToken.for_user(user)
             return Response({"token": str(token.access_token)},
                             status=status.HTTP_200_OK)
+        return Response(status=status.HTTP_400_BAD_REQUEST)
 
 
-class UsersViewSet(viewsets.ModelViewSet):
+class UserViewSet(viewsets.ModelViewSet):
     queryset = User.objects.all()
-    permission_classes = (IsAuthenticated, IsAdminOrSuperuser, )
     lookup_field = 'username'
+    permission_classes = (IsAuthenticated, IsAdminOrSuperuser, )
     filter_backends = [SearchFilter]
     search_fields = ['username']
 
@@ -69,23 +74,21 @@ class UsersViewSet(viewsets.ModelViewSet):
             return AdminRegistrationSerializer
         return UserSerializer
 
-
-class CurrentUserViewSet(mixins.RetrieveModelMixin,
-                         mixins.UpdateModelMixin,
-                         viewsets.GenericViewSet):
-    queryset = User.objects.all()
-    permission_classes = (IsAuthenticated, )
-    serializer_class = UserSerializer
-
-    def get_object(self):
-        return get_object_or_404(User, pk=self.request.user.pk)
-
-
-class DeleteUserViewSet(mixins.DestroyModelMixin,
-                        viewsets.GenericViewSet):
-    queryset = User.objects.all()
-    permission_classes = [IsAuthenticated, IsAdminOrSuperuser, ]
-    lookup_field = 'username'
+    @action(detail=False, methods=['get', 'patch'],
+            permission_classes=[IsAuthenticated], url_path='me')
+    def get_or_update_current_user(self, request):
+        user = get_object_or_404(User, pk=request.user.pk)
+        if request.method == 'GET':
+            serializer = self.get_serializer(user)
+            return Response(serializer.data)
+        if request.method == 'PATCH':
+            serializer = self.get_serializer(user, data=request.data,
+                                             partial=True)
+            serializer.is_valid(raise_exception=True)
+            self.perform_update(serializer)
+            if getattr(user, '_prefetched_objects_cache', None):
+                user._prefetched_objects_cache = {}
+            return Response(serializer.data)
 
 
 class ReviewViewSet(viewsets.ModelViewSet):
