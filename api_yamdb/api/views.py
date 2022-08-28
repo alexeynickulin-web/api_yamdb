@@ -43,14 +43,14 @@ class TokenObtainViewset(viewsets.GenericViewSet):
     permission_classes = [AllowAny]
 
     def update(self, request):
-        if "username" in request.data:
-            user = get_object_or_404(User, username=request.data["username"])
-            serializer = TokenObtainSerializer(user, data=request.data)
-            serializer.is_valid(raise_exception=True)
-            token = RefreshToken.for_user(user)
-            return Response({"token": str(token.access_token)},
-                            status=status.HTTP_200_OK)
-        return Response(status=status.HTTP_400_BAD_REQUEST)
+        serializer = TokenObtainSerializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+        user = get_object_or_404(User,
+                                 username=serializer.
+                                 validated_data['username'])
+        token = RefreshToken.for_user(user)
+        return Response({"token": str(token.access_token)},
+                        status=status.HTTP_200_OK)
 
 
 class UserViewSet(viewsets.ModelViewSet):
@@ -68,17 +68,16 @@ class UserViewSet(viewsets.ModelViewSet):
     @action(detail=False, methods=['get', 'patch'],
             permission_classes=[IsAuthenticated], url_path='me')
     def get_or_update_current_user(self, request):
-        user = get_object_or_404(User, pk=request.user.pk)
         if request.method == 'GET':
-            serializer = self.get_serializer(user)
+            serializer = self.get_serializer(request.user)
             return Response(serializer.data)
         if request.method == 'PATCH':
-            serializer = self.get_serializer(user, data=request.data,
+            serializer = self.get_serializer(request.user, data=request.data,
                                              partial=True)
             serializer.is_valid(raise_exception=True)
             self.perform_update(serializer)
-            if getattr(user, '_prefetched_objects_cache', None):
-                user._prefetched_objects_cache = {}
+            if getattr(request.user, '_prefetched_objects_cache', None):
+                request.user._prefetched_objects_cache = {}
             return Response(serializer.data)
 
 

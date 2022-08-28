@@ -3,17 +3,13 @@ from rest_framework.exceptions import ValidationError
 from rest_framework.generics import get_object_or_404
 from reviews.models import Category, Comment, Genre, Review, Title, User
 from reviews.utils import ROLES, USER
+from reviews.validators import username_not_me
 
 
 class RegistrationSerializer(serializers.ModelSerializer):
     class Meta:
         model = User
         fields = ('email', 'username')
-
-    def validate_username(self, username):
-        if username.lower() == 'me':
-            raise ValidationError("You cannot use 'me' as a username")
-        return username
 
 
 class AdminRegistrationSerializer(serializers.ModelSerializer):
@@ -37,14 +33,17 @@ class TokenObtainSerializer(serializers.ModelSerializer):
         fields = ['username', 'confirmation_code']
 
     def validate_confirmation_code(self, code):
-        if self.instance:
-            if str(code) == str(self.instance.confirmation_code):
+        try:
+            user = get_object_or_404(User,
+                                     username=self.initial_data['username'])
+            if str(code) == str(user.confirmation_code):
                 return code
             else:
                 raise ValidationError(
                     'Incorrect confirmation code. Try again.'
                 )
-        return code
+        except KeyError:
+            return
 
 
 class UserSerializer(serializers.ModelSerializer):
