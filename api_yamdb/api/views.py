@@ -12,6 +12,7 @@ from rest_framework.pagination import LimitOffsetPagination
 from rest_framework.permissions import AllowAny, IsAuthenticated
 from rest_framework.response import Response
 from rest_framework_simplejwt.tokens import RefreshToken
+
 from reviews.models import Category, Genre, Review, Title, User
 
 from .filters import TitleFilter
@@ -45,10 +46,7 @@ class TokenObtainViewset(viewsets.GenericViewSet):
     def update(self, request):
         serializer = TokenObtainSerializer(data=request.data)
         serializer.is_valid(raise_exception=True)
-        user = get_object_or_404(User,
-                                 username=serializer.
-                                 validated_data['username'])
-        token = RefreshToken.for_user(user)
+        token = RefreshToken.for_user(self.get_object())
         return Response({"token": str(token.access_token)},
                         status=status.HTTP_200_OK)
 
