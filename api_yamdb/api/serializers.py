@@ -3,12 +3,16 @@ from rest_framework.exceptions import ValidationError
 from rest_framework.generics import get_object_or_404
 from reviews.models import Category, Comment, Genre, Review, Title, User
 from reviews.utils import ROLES, USER
+from reviews.validators import username_not_me
 
 
 class RegistrationSerializer(serializers.ModelSerializer):
     class Meta:
         model = User
         fields = ('email', 'username')
+
+    def validate_username(self, username):
+        return username_not_me(username)
 
 
 class AdminRegistrationSerializer(serializers.ModelSerializer):
