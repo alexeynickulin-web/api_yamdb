@@ -16,7 +16,10 @@ from rest_framework_simplejwt.tokens import RefreshToken
 from reviews.models import Category, Genre, Review, Title, User
 
 from .filters import TitleFilter
-from .permissions import IsAdminOrSuperuser, IsAuthorOrAdminOrModerator
+from .mixins import CreateListDestroyViewSet
+from .permissions import (IsAdminOrSuperuser,
+                          IsAuthorOrAdminOrModerator,
+                          IsAdminOrSuperuserOrReadOnly)
 from .serializers import (AdminRegistrationSerializer, CategorySerializer,
                           CommentSerializer, GenreSerializer,
                           RegistrationSerializer, ReviewSerializer,
@@ -111,13 +114,6 @@ class CommentViewSet(viewsets.ModelViewSet):
         serializer.save(author=self.request.user, review=review)
 
 
-class CreateListDestroyViewSet(mixins.CreateModelMixin,
-                               mixins.ListModelMixin,
-                               mixins.DestroyModelMixin,
-                               viewsets.GenericViewSet):
-    pass
-
-
 class CategoryViewSet(CreateListDestroyViewSet):
     lookup_field = 'slug'
     queryset = Category.objects.all()
@@ -125,12 +121,7 @@ class CategoryViewSet(CreateListDestroyViewSet):
     pagination_class = LimitOffsetPagination
     filter_backends = (SearchFilter, )
     search_fields = ('name',)
-    permission_classes = [IsAuthenticated, IsAdminOrSuperuser, ]
-
-    def get_permissions(self):
-        if self.action == 'list':
-            return (AllowAny(),)
-        return super().get_permissions()
+    permission_classes = [IsAdminOrSuperuserOrReadOnly, ]
 
 
 class GenreViewSet(CreateListDestroyViewSet):
@@ -140,12 +131,7 @@ class GenreViewSet(CreateListDestroyViewSet):
     pagination_class = LimitOffsetPagination
     filter_backends = (SearchFilter, )
     search_fields = ('name',)
-    permission_classes = [IsAuthenticated, IsAdminOrSuperuser, ]
-
-    def get_permissions(self):
-        if self.action == 'list':
-            return (AllowAny(),)
-        return super().get_permissions()
+    permission_classes = [IsAdminOrSuperuserOrReadOnly, ]
 
 
 class TitleViewSet(viewsets.ModelViewSet):
@@ -155,14 +141,9 @@ class TitleViewSet(viewsets.ModelViewSet):
     pagination_class = LimitOffsetPagination
     filter_backends = (DjangoFilterBackend,)
     filterset_class = TitleFilter
-    permission_classes = [IsAuthenticated, IsAdminOrSuperuser, ]
+    permission_classes = [IsAdminOrSuperuserOrReadOnly, ]
 
     def get_serializer_class(self):
         if self.request.method in ('POST', 'PATCH',):
             return TitleCreateSerializer
         return TitleSerializer
-
-    def get_permissions(self):
-        if self.action == 'list' or self.action == 'retrieve':
-            return (AllowAny(),)
-        return super().get_permissions()
