@@ -24,20 +24,22 @@ from .serializers import (AdminRegistrationSerializer, CategorySerializer,
                           TokenObtainSerializer, UserSerializer)
 
 
-class RegistrationViewSet(viewsets.GenericViewSet):
+class RegistrationViewSet(mixins.CreateModelMixin, viewsets.GenericViewSet):
     queryset = User.objects.all()
     serializer_class = RegistrationSerializer
     permission_classes = [AllowAny]
 
-    def create(self, request):
-        serializer = self.get_serializer(data=request.data)
-        serializer.is_valid(raise_exception=True)
+    def create(self, request, *args, **kwargs):
+        super().create(request, *args, **kwargs)
+        return Response(request.data,
+                        status=status.HTTP_200_OK)
+
+    def perform_create(self, serializer):
         code = secrets.token_urlsafe(nbytes=10)
         send_mail(subject='Confirmation Code for Yamdb',
                   message=code, from_email=settings.ADMIN_EMAIL,
                   recipient_list=[self.request.data['email']])
         serializer.save(confirmation_code=code)
-        return Response(serializer.data, status=status.HTTP_200_OK)
 
 
 class TokenObtainViewset(viewsets.GenericViewSet):
